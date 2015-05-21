@@ -66,6 +66,7 @@ print_succ_or_fail() {
     echo_success
   else
     echo_failure
+    exit 1
   fi
   echo
 }
