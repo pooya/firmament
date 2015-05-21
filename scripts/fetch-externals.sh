@@ -22,6 +22,7 @@ PROTOBUF_VER="2.4.1"
 BOOST_VER="1.55"
 CS2_VER="4.6"
 PION_VER="5.0.5"
+LIBUUID_VER="1.0.3"
 
 OS_ID=$(lsb_release -i -s)
 OS_RELEASE=$(lsb_release -r -s)
@@ -48,8 +49,8 @@ fi
 # Flowlessly deployment key
 FLOWLESSLY_DEPLOY_KEY=~/.ssh/flowlessly-deploy_rsa
 
-UBUNTU_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
-DEBIAN_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
+UBUNTU_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${LIBHDFS3_PKGS} ${MISC_PKGS}"
+DEBIAN_x86_PKGS="${BASE_PKGS} ${CLANG_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${PERFTOOLS_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${LIBHDFS3_PKGS} ${MISC_PKGS}"
 DEBIAN_ia64_PKGS="${BASE_PKGS} ${COMPILER_PKGS} ${GOOGLE_PKGS} ${BOOST_PKGS} ${PION_PKGS} ${MISC_PKGS}"
 
 # Super-user? Should I run sudo commands non-interactively?
@@ -516,6 +517,36 @@ print_succ_or_fail ${RES}
 cd ${EXT_DIR}
 
 
+## libuuid (required for libhdfs3)
+print_subhdr "LIBUUID LIBRARY"
+get_dep_arch "libuuid" "http://downloads.sourceforge.net/project/libuuid/libuuid-${LIBUUID_VER}.tar.gz"
+mkdir -p libuuid-build
+cd libuuid-${LIBUUID_VER}
+RES=$(./configure -q --prefix=${EXT_DIR}/libuuid-build)
+echo "Configuring..."
+if [[ ${RES} -eq 0 ]]; then
+  echo "Building..."
+  RES=$(make --quiet && make --quiet install)
+fi
+print_succ_or_fail ${RES}
+
+
+## libhdfs3 (HDFS library)
+print_subhdr "LIBHDFS3 LIBRARY"
+get_dep_git "libhdfs3" "https://github.com/PivotalRD/libhdfs3.git"
+cd libhdfs3-git
+mkdir -p build
+cd build
+echo "Configuring..."
+RES=$(CC=gcc CXX=g++ ../bootstrap 1>/dev/null)
+if [[ ${RES} -eq 0 ]]; then
+  echo "Building..."
+  RES=$(make --quiet 2>/dev/null)
+fi
+print_succ_or_fail ${RES}
+cd ${EXT_DIR}
+
+
 ## Flowlessly solver code for min-cost max-flow scheduler.
 print_hdr "CHECKING OUT FLOWLESSLY CODE"
 if [[ ${NONINTERACTIVE} -eq 1 ]]; then
@@ -548,7 +579,6 @@ cd cake-git
 RES=$(ls cake)
 print_succ_or_fail ${RES}
 cd ${EXT_DIR}
-
 
 ## libDIOS checkout or ask user to request tarball
 print_hdr "CHECKING OUT LIBDIOS CODE"
