@@ -529,6 +529,7 @@ if [[ ${RES} -eq 0 ]]; then
   RES=$(make --quiet && make --quiet install)
 fi
 print_succ_or_fail ${RES}
+cd ${EXT_DIR}
 
 
 ## libhdfs3 (HDFS library)
@@ -538,7 +539,7 @@ cd libhdfs3-git
 mkdir -p build
 cd build
 echo "Configuring..."
-RES=$(CC=gcc CXX=g++ ../bootstrap 1>/dev/null)
+RES=$(CC=gcc CXX=g++ ../bootstrap --dependency=${EXT_DIR}/libuuid-build/ 1>/dev/null)
 if [[ ${RES} -eq 0 ]]; then
   echo "Building..."
   RES=$(make --quiet 2>/dev/null)
